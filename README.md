@@ -4,6 +4,12 @@ A minimal focus timer. Track time per activity (reading, gym, practice) and see 
 
 Live: https://arifszn.github.io/focused/
 
+![Home: one card per activity](screenshots/home.png)
+
+![Activity dashboard with calendar and day log](screenshots/activity.png)
+
+![Full-screen timer while a session runs](screenshots/focus.png)
+
 ## Features
 
 - One card per activity on the home screen: today's time, this week, days in a row and the last 28 days.
