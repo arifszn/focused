@@ -392,7 +392,7 @@
     if (open) {
       const name = actName(sitting.act);
       el.focusTime.textContent = fmtElapsed(elapsed);
-      el.focusLabel.textContent = paused ? `${name} · paused` : `${name} · since ${fmtClock(sitting.since)}`;
+      el.focusLabel.textContent = paused ? "Paused" : `Since ${fmtClock(sitting.since)}`;
       el.pauseText.textContent = paused ? "Resume" : "Pause";
       el.pauseIcon.innerHTML = paused ? '<path d="M8 4l20 12-20 12z"/>' : '<path d="M8 5h6v22H8zM18 5h6v22h-6z"/>';
       el.finish.hidden = !paused;

@@ -21,7 +21,7 @@ Colour roles: chrome is ink and greys only. The one hue, `--accent: #1d5fbf`, go
 - Row action: grey text, turns red on hover
 
 ## Focus mode
-While a session runs, a full-screen near-black view (`#0b0b0c`) takes over: label, timer at weight 200 `clamp(88px, 19vw, 260px)`, a white Pause pill, today's total at the foot. Paused: timer greys, Resume + Finish. Each running segment is saved as its own session.
+While a session runs, a full-screen view on the app's ground (`#f2f4f7`) takes over: a label ("Since 18:05" or "Paused", no activity name), the timer at weight 200 `clamp(88px, 19vw, 260px)` in ink, quiet outlined Pause/Resume and a text Finish, today's total at the foot. Paused: the time turns grey. Each running segment is saved as its own session.
 
 ## Motion
 Feedback only: press scale, hover tone, a slow pulse on the running dot. Reduced motion stops all of it.
