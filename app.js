@@ -27,7 +27,7 @@
     logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logTable: $("log-table"), logBody: $("log-body"), status: $("status"),
     wipe: $("wipe"), wipeConfirm: $("wipe-confirm"), wipeQ: $("wipe-q"), wipeYes: $("wipe-yes"), wipeNo: $("wipe-no"), wipeStatus: $("wipe-status"),
     focus: $("focus"), focusLabel: $("focus-label"), focusTime: $("focus-time"), focusToday: $("focus-today"),
-    pause: $("pause"), pauseIcon: $("pause-icon"), pauseText: $("pause-text"), finish: $("finish"),
+    toast: $("toast"), pause: $("pause"), pauseIcon: $("pause-icon"), pauseText: $("pause-text"), finish: $("finish"),
   };
 
   /* Storage */
@@ -208,17 +208,19 @@
     const since = a.since || a.start;
     const total = segs.reduce((t, [x, y]) => t + (y - x), 0);
     const sessions = getSessions();
-    if (segs.length && total >= MIN_SESSION_MS && !sessions.some((s) => s.start === since)) {
+    const saved = segs.length > 0 && total >= MIN_SESSION_MS;
+    if (saved && !sessions.some((s) => s.start === since)) {
       sessions.push({ id: `${since}`, start: since, end: segs[segs.length - 1][1], act: actOf(a), segs });
       sessions.sort((x, y) => x.start - y.start);
       write(KEY_SESSIONS, sessions);
     }
     write(KEY_ACTIVE, null);
+    return saved;
   }
 
   function finishSession() {
     const a = getActive();
-    if (a) finalize(a, Date.now());
+    if (a && !finalize(a, Date.now())) toast("Not saved. Sessions under 1 minute aren't logged.");
     if (channel) channel.postMessage({ type: "stopped" });
     active = null;
     releaseOwner();
@@ -515,6 +517,15 @@
     renderFocus(now);
     const minute = Math.floor(elapsedOf(active, now) / 60000);
     if (minute !== lastMinute) { lastMinute = minute; render(); }
+  }
+
+  /* Toast: a short note that clears itself */
+  let toastTimer = null;
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("is-shown");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.toast.classList.remove("is-shown"); el.toast.textContent = ""; }, 4000);
   }
 
   /* Events: timer and focus view */
