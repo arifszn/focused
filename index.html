@@ -6,6 +6,8 @@
 <title>Focused</title>
 <meta name="description" content="A minimal focus timer. Track time per activity and see it day by day on a calendar.">
 <meta name="theme-color" content="#f2f4f7">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@200;400;500;600&display=swap" rel="stylesheet">
@@ -16,7 +18,10 @@
   <header class="bar">
     <div class="bar-title">
       <a class="back" id="back" href="#/" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>All activities</a>
-      <h1 id="title">Focused</h1>
+      <div class="brand">
+        <svg class="mark" id="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="16" cy="16" r="4.5" fill="var(--accent)"/></svg>
+        <h1 id="title">Focused</h1>
+      </div>
       <form class="rename-form" id="rename-form" hidden>
         <label class="visually-hidden" for="rename-input">Activity name</label>
         <input class="rename-input" id="rename-input" maxlength="24" autocomplete="off">

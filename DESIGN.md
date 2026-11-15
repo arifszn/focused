@@ -10,6 +10,9 @@ The locked system. Change it on purpose; the file is the rule.
 - Activity (`#/<id>`, `#/<id>/<yyyy-mm-dd>`): 12 columns. Row 1: timer 8 + figures 4. Row 2: calendar 8 + day log 4. Rename and Delete sit in the header.
 - Type: Geist only. Timer at weight 200, `clamp(72px, 10vw, 136px)`; figures 30px/400; titles 16-20px/600; body 14px; meta 12px.
 
+## Logo
+A 2.5px ink ring (r 12 on a 32 grid) around a blue dot (r 4.5, `--accent`): the running-session dot, held in focus. `logo.svg` is the mark; `favicon.svg` switches the ring to light on dark browser chrome; `apple-touch-icon.png` sets it on the ground colour. In the app it sits beside the title on the home screen only.
+
 ## Tokens
 `tokens.css` is the source of truth.
 

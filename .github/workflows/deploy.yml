@@ -18,7 +18,7 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - run: mkdir -p dist && cp index.html app.js app.css base.css tokens.css dist/
+      - run: mkdir -p dist && cp index.html app.js app.css base.css tokens.css favicon.svg apple-touch-icon.png logo.svg dist/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

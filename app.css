@@ -15,6 +15,9 @@
 .back svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media (hover: hover) { .back:hover { color: var(--text); } }
 .bar h1 { overflow-wrap: anywhere; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mark { width: 24px; height: 24px; flex-shrink: 0; color: var(--text); }
+.back:not([hidden]) ~ .brand .mark { display: none; }
 .rename-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .rename-input { width: 16ch; height: 36px; padding: 0 10px; border: 1px solid var(--control); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: 600 var(--fs-title)/1 var(--font); }
 .act-tools { display: grid; justify-items: end; gap: 8px; }
@@ -195,3 +198,5 @@ body.is-focusing { overflow: hidden; }
   .focus-actions { flex-direction: column; }
 }
 .wipe-status:focus { outline: none; }
+.card-run.is-paused { color: var(--muted); }
+.card-run.is-paused::before { animation: none; }

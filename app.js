@@ -62,6 +62,12 @@
     return Array.isArray(a) ? a : [DEFAULT_ACT];
   };
   const actOf = (s) => (s && s.act) || DEFAULT_ACT.id;
+  // A session is one sitting: its running stretches, with the pauses between them left out.
+  const segsOf = (s) => s.segs || [[s.start, s.end]];
+  const durOf = (s) => segsOf(s).reduce((t, [a, b]) => t + (b - a), 0);
+  // The running sitting's stretches so far, the open one ending now.
+  const liveSegs = (a, now) => (a.segs || []).concat(a.start ? [[a.start, now]] : []);
+  const elapsedOf = (a, now) => liveSegs(a, now).reduce((t, [x, y]) => t + (y - x), 0);
   const findAct = (id) => getActs().find((x) => x.id === id) || null;
   const actName = (id) => { const a = findAct(id); return a ? a.name : "Deleted activity"; };
   const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -102,13 +108,13 @@
   /* Totals per day, splitting sessions that cross midnight */
   function dayTotals(sessions, act, now) {
     const totals = new Map();
-    const all = act ? sessions.concat([{ start: act.start, end: now }]) : sessions;
-    for (const s of all) {
-      let a = s.start;
-      while (a < s.end) {
+    const segs = sessions.flatMap(segsOf).concat(act ? liveSegs(act, now) : []);
+    for (const [start, end] of segs) {
+      let a = start;
+      while (a < end) {
         const d = new Date(a);
         const nextMidnight = addDays(startOfDay(d), 1).getTime();
-        const b = Math.min(s.end, nextMidnight);
+        const b = Math.min(end, nextMidnight);
         const k = dayKey(d);
         totals.set(k, (totals.get(k) || 0) + (b - a));
         a = b;
@@ -149,9 +155,6 @@
   let probeTimer = null;
   let tickTimer = null;
   let undo = null;
-  // One sitting in this tab: the saved time of its earlier segments and whether it is paused now.
-  // Each running segment is saved as its own session; the sitting only drives the full-screen view.
-  let sitting = null;
 
   // Route: "#/" is home; "#/<activity>" and "#/<activity>/<yyyy-mm-dd>" are one activity's dashboard.
   const today0 = startOfDay(new Date());
@@ -187,11 +190,13 @@
     render();
   }
 
-  /* Session control */
+  /* Session control.
+     The active sitting lives in storage as { act, since, segs: closed stretches, start: open stretch or null when paused }.
+     Finishing saves it as one session if its running time reaches a minute. */
   function startSession(act) {
     if (getActive()) { active = getActive(); render(); return; }
     const now = Date.now();
-    active = { tab: tabId, start: now, last: now, act };
+    active = { tab: tabId, act, since: now, segs: [], start: now, last: now };
     if (!write(KEY_ACTIVE, active)) { active = null; return; }
     becomeOwner();
     render();
@@ -199,16 +204,19 @@
 
   function finalize(a, end) {
     if (!a) return;
+    const segs = (a.segs || []).concat(a.start ? [[a.start, Math.max(a.start, end)]] : []);
+    const since = a.since || a.start;
+    const total = segs.reduce((t, [x, y]) => t + (y - x), 0);
     const sessions = getSessions();
-    if (end - a.start >= MIN_SESSION_MS && !sessions.some((s) => s.start === a.start)) {
-      sessions.push({ id: `${a.start}`, start: a.start, end, act: actOf(a) });
+    if (segs.length && total >= MIN_SESSION_MS && !sessions.some((s) => s.start === since)) {
+      sessions.push({ id: `${since}`, start: since, end: segs[segs.length - 1][1], act: actOf(a), segs });
       sessions.sort((x, y) => x.start - y.start);
       write(KEY_SESSIONS, sessions);
     }
     write(KEY_ACTIVE, null);
   }
 
-  function stopSession() {
+  function finishSession() {
     const a = getActive();
     if (a) finalize(a, Date.now());
     if (channel) channel.postMessage({ type: "stopped" });
@@ -216,25 +224,22 @@
     releaseOwner();
     render();
   }
-
-  function pauseSitting() {
+  function pauseSession() {
     const a = getActive();
-    const seg = a ? Date.now() - a.start : 0;
-    sitting = {
-      base: (sitting ? sitting.base : 0) + (seg >= MIN_SESSION_MS ? seg : 0),
-      since: sitting ? sitting.since : (a ? a.start : Date.now()),
-      act: sitting ? sitting.act : actOf(a),
-      paused: true,
-    };
-    stopSession();
+    if (!a || !a.start) return;
+    a.segs = (a.segs || []).concat([[a.start, Date.now()]]);
+    a.start = null;
+    write(KEY_ACTIVE, a);
+    active = a;
+    render();
   }
-  function resumeSitting() {
-    if (!sitting || !findAct(sitting.act)) { sitting = null; render(); return; }
-    sitting.paused = false;
-    startSession(sitting.act);
-  }
-  function finishSitting() {
-    sitting = null;
+  function resumeSession() {
+    const a = getActive();
+    if (!a || a.start) return;
+    a.start = Date.now();
+    a.last = a.start;
+    write(KEY_ACTIVE, a);
+    active = a;
     render();
   }
 
@@ -269,13 +274,13 @@
       return;
     }
     let answered = false;
-    const onMsg = (ev) => { if (ev.data && ev.data.type === "pong" && ev.data.start === a.start) answered = true; };
+    const onMsg = (ev) => { if (ev.data && ev.data.type === "pong" && ev.data.start === a.since) answered = true; };
     channel.addEventListener("message", onMsg);
-    channel.postMessage({ type: "ping", start: a.start });
+    channel.postMessage({ type: "ping", start: a.since });
     setTimeout(() => {
       channel.removeEventListener("message", onMsg);
       const still = getActive();
-      if (!answered && still && still.start === a.start) {
+      if (!answered && still && still.since === a.since) {
         finalize(still, still.last);
         active = null;
         render();
@@ -285,8 +290,8 @@
 
   if (channel) {
     channel.addEventListener("message", (ev) => {
-      if (ev.data && ev.data.type === "ping" && owner && active && ev.data.start === active.start) {
-        channel.postMessage({ type: "pong", start: active.start });
+      if (ev.data && ev.data.type === "ping" && owner && active && ev.data.start === active.since) {
+        channel.postMessage({ type: "pong", start: active.since });
       }
     });
   }
@@ -323,7 +328,7 @@
     el.actTools.hidden = !a;
     if (a && !el.renameForm.hidden) return;
     el.title.textContent = a ? a.name : "Focused";
-    if (!sitting) document.title = a ? `${a.name} · Focused` : "Focused";
+    if (!active) document.title = a ? `${a.name} · Focused` : "Focused";
   }
 
   /* Rendering: home */
@@ -340,7 +345,7 @@
       const meta = [`${fmtDur(sm.week)} this week`];
       if (sm.streak) meta.push(`${plural(sm.streak, "day")} in a row`);
       return `<li><a class="act-card" href="#/${encodeURIComponent(a.id)}">` +
-        `<span class="card-top"><span class="card-name">${esc(a.name)}</span>${sl.active ? `<span class="card-run">Running</span>` : ""}</span>` +
+        `<span class="card-top"><span class="card-name">${esc(a.name)}</span>${sl.active ? `<span class="card-run${sl.active.start ? "" : " is-paused"}">${sl.active.start ? "Running" : "Paused"}</span>` : ""}</span>` +
         `<span class="card-figure">${fmtDur(sm.today)} <span class="card-unit">today</span></span>` +
         `<span class="card-meta">${meta.join(" · ")}</span>` +
         `<span class="strip" aria-hidden="true">${strip.join("")}</span></a></li>`;
@@ -383,23 +388,19 @@
 
   let focusOpen = false;
   function renderFocus(now) {
-    if (active && !sitting) sitting = { base: 0, since: active.start, act: actOf(active), paused: false };
-    if (!active && sitting && !sitting.paused) sitting = null; // stopped elsewhere
-    const open = !!sitting;
-    const paused = open && sitting.paused;
-    const elapsed = open ? sitting.base + (active ? now - active.start : 0) : 0;
-
+    const open = !!active;
     if (open) {
-      const name = actName(sitting.act);
+      const paused = !active.start;
+      const elapsed = elapsedOf(active, now);
       el.focusTime.textContent = fmtElapsed(elapsed);
-      el.focusLabel.textContent = paused ? "Paused" : `Since ${fmtClock(sitting.since)}`;
+      el.focusLabel.textContent = paused ? "Paused" : `Since ${fmtClock(active.since || active.start)}`;
       el.pauseText.textContent = paused ? "Resume" : "Pause";
       el.pauseIcon.innerHTML = paused ? '<path d="M8 4l20 12-20 12z"/>' : '<path d="M8 5h6v22H8zM18 5h6v22h-6z"/>';
       el.finish.hidden = !paused;
       el.focus.classList.toggle("is-paused", paused);
-      const sl = slice(sitting.act);
+      const sl = slice(actOf(active));
       el.focusToday.textContent = fmtDur(dayTotals(sl.sessions, sl.active, now).get(dayKey(new Date(now))) || 0);
-      document.title = `${paused ? "Paused · " : ""}${fmtElapsed(elapsed)} ${name}`;
+      document.title = `${paused ? "Paused · " : ""}${fmtElapsed(elapsed)} ${actName(actOf(active))}`;
     }
 
     if (open !== focusOpen) {
@@ -469,16 +470,16 @@
 
     const from = d.getTime(), to = addDays(d, 1).getTime();
     const rows = sl.sessions.filter((s) => s.end > from && s.start < to);
-    const live = sl.active && sl.active.start < to && now > from;
+    const live = sl.active && (sl.active.since || sl.active.start) < to && now > from;
     const sig = route.act + selected + rows.map((s) => s.id).join(",") + (live ? "live" : "");
     if (sig === logKey && !live) return;
     logKey = sig;
 
     const html = rows.map((s) =>
-      `<tr><td>${fmtClock(s.start)}</td><td>${fmtClock(s.end)}</td><td class="len">${fmtDur(s.end - s.start)}</td>` +
+      `<tr><td>${fmtClock(s.start)}</td><td>${fmtClock(s.end)}</td><td class="len">${fmtDur(durOf(s))}</td>` +
       `<td><button type="button" class="link-btn" data-del="${s.id}" aria-label="Delete session from ${fmtClock(s.start)} to ${fmtClock(s.end)}">Delete</button></td></tr>`
     );
-    if (live) html.push(`<tr><td>${fmtClock(sl.active.start)}</td><td>Running</td><td class="len">${fmtDur(now - sl.active.start)}</td><td></td></tr>`);
+    if (live) html.push(`<tr><td>${fmtClock(sl.active.since || sl.active.start)}</td><td>${sl.active.start ? "Running" : "Paused"}</td><td class="len">${fmtDur(elapsedOf(sl.active, now))}</td><td></td></tr>`);
     el.logBody.innerHTML = html.join("");
     el.logTable.hidden = html.length === 0;
     el.logEmpty.hidden = html.length !== 0;
@@ -512,14 +513,14 @@
     if (!active) return;
     const now = Date.now();
     renderFocus(now);
-    const minute = Math.floor((now - active.start) / 60000);
+    const minute = Math.floor(elapsedOf(active, now) / 60000);
     if (minute !== lastMinute) { lastMinute = minute; render(); }
   }
 
   /* Events: timer and focus view */
   el.go.addEventListener("click", () => { if (route.act) startSession(route.act); });
-  el.pause.addEventListener("click", () => (getActive() ? pauseSitting() : resumeSitting()));
-  el.finish.addEventListener("click", finishSitting);
+  el.pause.addEventListener("click", () => { const a = getActive(); if (a && a.start) pauseSession(); else resumeSession(); });
+  el.finish.addEventListener("click", finishSession);
 
   /* Events: home */
   el.cards.addEventListener("click", (ev) => {
