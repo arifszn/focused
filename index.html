@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focused</title>
+<meta name="description" content="A minimal focus timer. Track time per activity and see it day by day on a calendar.">
+<meta name="theme-color" content="#f2f4f7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@200;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <div class="bar-title">
+      <a class="back" id="back" href="#/" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>All activities</a>
+      <h1 id="title">Focused</h1>
+      <form class="rename-form" id="rename-form" hidden>
+        <label class="visually-hidden" for="rename-input">Activity name</label>
+        <input class="rename-input" id="rename-input" maxlength="24" autocomplete="off">
+        <button class="ctl primary" type="submit">Save</button>
+        <button class="ctl" type="button" id="rename-cancel">Cancel</button>
+      </form>
+      <span class="bar-date" id="bar-date"></span>
+    </div>
+    <div class="act-tools" id="act-tools" hidden>
+      <div class="tool-links">
+        <button class="ctl" type="button" id="rename">Rename</button>
+        <button class="ctl" type="button" id="del-act">Delete</button>
+      </div>
+      <div class="del-act-confirm" id="del-act-confirm" role="group" aria-labelledby="del-act-q" hidden>
+        <p id="del-act-q">Delete this activity?</p>
+        <div class="confirm-actions">
+          <button class="ctl danger" type="button" id="del-act-yes">Delete</button>
+          <button class="ctl" type="button" id="del-act-no">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <noscript><p class="error">Focused needs JavaScript to record sessions.</p></noscript>
+  <p class="error" id="storage-error" role="alert" hidden>This browser is blocking local storage, so sessions will not be saved. Open the page in a normal (not private) window.</p>
+
+  <main id="home" hidden>
+    <h2 class="visually-hidden">Activities</h2>
+    <ul class="cards" id="cards"></ul>
+  </main>
+
+  <main id="detail" hidden>
+    <section class="row" aria-label="Timer">
+      <div class="card timer">
+        <span class="timer-label" id="timer-label">Ready</span>
+        <p class="timer-time" id="timer-time" aria-live="off">0:00</p>
+        <button class="go" id="go" type="button">
+          <svg id="go-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 4l20 12-20 12z"/></svg>
+          <span id="go-text">Start</span>
+        </button>
+      </div>
+      <dl class="card stats">
+        <div class="stat"><dt>Today</dt><dd id="s-today">0 min</dd></div>
+        <div class="stat"><dt>This week</dt><dd id="s-week">0 min</dd></div>
+        <div class="stat"><dt>This month</dt><dd id="s-month">0 min</dd></div>
+        <div class="stat"><dt>Days in a row</dt><dd id="s-streak">0</dd></div>
+      </dl>
+    </section>
+
+    <div class="row">
+      <section class="card cal" aria-labelledby="cal-title">
+        <div class="cal-head">
+          <h2 id="cal-title">Month</h2>
+          <div class="cal-nav">
+            <button class="ctl" type="button" id="this-month">This month</button>
+            <button class="ctl icon" type="button" id="prev" aria-label="Previous month"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button>
+            <button class="ctl icon" type="button" id="next" aria-label="Next month"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+          </div>
+        </div>
+        <div class="grid" id="grid" role="group" aria-labelledby="cal-title"></div>
+        <ul class="legend" aria-label="Colour key">
+          <li class="end" aria-hidden="true">Less</li>
+          <li><span class="swatch" title="None"></span><span class="visually-hidden">None</span></li>
+          <li><span class="swatch h1" title="Under 30 min"></span><span class="visually-hidden">Under 30 min</span></li>
+          <li><span class="swatch h2" title="30 to 60 min"></span><span class="visually-hidden">30 to 60 min</span></li>
+          <li><span class="swatch h3" title="1 to 2 h"></span><span class="visually-hidden">1 to 2 h</span></li>
+          <li><span class="swatch h4" title="2 h or more"></span><span class="visually-hidden">2 h or more</span></li>
+          <li class="end" aria-hidden="true">More</li>
+        </ul>
+      </section>
+
+      <section class="card log" aria-labelledby="log-title">
+        <h2 id="log-title">Today</h2>
+        <p class="log-total" id="log-total">0 min</p>
+        <p class="empty" id="log-empty">No sessions on this day.</p>
+        <table id="log-table" hidden>
+          <thead><tr><th scope="col">Start</th><th scope="col">End</th><th scope="col" class="len">Length</th><th scope="col"><span class="visually-hidden">Action</span></th></tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+        <p class="status" id="status" aria-live="polite"></p>
+        <div class="wipe">
+          <button class="link-btn wipe-btn" type="button" id="wipe">Delete all sessions</button>
+          <div class="wipe-confirm" id="wipe-confirm" role="group" aria-labelledby="wipe-q" hidden>
+            <p id="wipe-q">Delete all sessions? This can't be undone.</p>
+            <div class="confirm-actions">
+              <button class="ctl danger" type="button" id="wipe-yes">Delete all</button>
+              <button class="ctl" type="button" id="wipe-no">Cancel</button>
+            </div>
+          </div>
+          <p class="wipe-status" id="wipe-status" aria-live="polite"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="focus" id="focus" role="dialog" aria-modal="true" aria-labelledby="focus-label" hidden>
+  <p class="focus-label" id="focus-label">Focusing</p>
+  <p class="focus-time" id="focus-time">0:00</p>
+  <div class="focus-actions">
+    <button class="focus-btn" id="pause" type="button">
+      <svg id="pause-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 5h6v22H8zM18 5h6v22h-6z"/></svg>
+      <span id="pause-text">Pause</span>
+    </button>
+    <button class="focus-end" id="finish" type="button" hidden>Finish</button>
+  </div>
+  <p class="focus-today">Today <span id="focus-today">0 min</span></p>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>
