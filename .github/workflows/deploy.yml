@@ -26,22 +26,3 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
 
-  cloudflare-pages:
-    runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    steps:
-      - uses: actions/checkout@v5
-      - if: env.CLOUDFLARE_API_TOKEN == ''
-        run: echo "::notice::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not set; skipping Cloudflare Pages."
-      - if: env.CLOUDFLARE_API_TOKEN != ''
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-      - if: env.CLOUDFLARE_API_TOKEN != ''
-        run: mkdir -p dist && cp index.html app.js app.css base.css tokens.css dist/
-      - if: env.CLOUDFLARE_API_TOKEN != ''
-        run: npx --yes wrangler@4 pages project create focused --production-branch=main || true
-      - if: env.CLOUDFLARE_API_TOKEN != ''
-        run: npx --yes wrangler@4 pages deploy dist --project-name=focused --branch=main

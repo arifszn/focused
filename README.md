@@ -28,10 +28,7 @@ Then open http://localhost:8000.
 
 ## Deploy
 
-`.github/workflows/deploy.yml` deploys every push to `main`:
-
-- **GitHub Pages**: set the repository's Pages source to GitHub Actions.
-- **Cloudflare Pages** (project `focused`): add the repository secrets `CLOUDFLARE_API_TOKEN` (with the Cloudflare Pages: Edit permission) and `CLOUDFLARE_ACCOUNT_ID`. Without them this job is skipped.
+`.github/workflows/deploy.yml` deploys every push to `main` to GitHub Pages.
 
 ## License
 
