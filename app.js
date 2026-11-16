@@ -330,7 +330,7 @@
     el.actTools.hidden = !a;
     if (a && !el.renameForm.hidden) return;
     el.title.textContent = a ? a.name : "Focused";
-    if (!active) document.title = a ? `${a.name} · Focused` : "Focused";
+    if (!active) document.title = "Focused";
   }
 
   /* Rendering: home */
@@ -402,7 +402,7 @@
       el.focus.classList.toggle("is-paused", paused);
       const sl = slice(actOf(active));
       el.focusToday.textContent = fmtDur(dayTotals(sl.sessions, sl.active, now).get(dayKey(new Date(now))) || 0);
-      document.title = `${paused ? "Paused · " : ""}${fmtElapsed(elapsed)} ${actName(actOf(active))}`;
+      document.title = `${paused ? "Paused · " : ""}${fmtElapsed(elapsed)}`;
     }
 
     if (open !== focusOpen) {
