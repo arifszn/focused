@@ -31,9 +31,12 @@
       <span class="bar-date" id="bar-date"></span>
     </div>
     <div class="act-tools" id="act-tools" hidden>
-      <div class="tool-links">
-        <button class="ctl" type="button" id="rename">Rename</button>
-        <button class="ctl" type="button" id="del-act">Delete</button>
+      <div class="tool-links menu">
+        <button class="icon-btn" type="button" id="act-menu-btn" aria-label="Activity actions" aria-haspopup="menu" aria-expanded="false" aria-controls="act-menu"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="12.5" cy="8" r=".75"/></svg></button>
+        <div class="menu-list" id="act-menu" role="menu" aria-labelledby="act-menu-btn" hidden>
+          <button class="menu-item" type="button" role="menuitem" id="rename">Rename</button>
+          <button class="menu-item danger" type="button" role="menuitem" id="del-act">Delete</button>
+        </div>
       </div>
       <div class="del-act-confirm" id="del-act-confirm" role="group" aria-labelledby="del-act-q" hidden>
         <p id="del-act-q">Delete this activity?</p>
@@ -99,12 +102,16 @@
           <div class="menu">
             <button class="icon-btn" type="button" id="log-menu-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded="false" aria-controls="log-menu"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="12.5" cy="8" r=".75"/></svg></button>
             <div class="menu-list" id="log-menu" role="menu" aria-labelledby="log-menu-btn" hidden>
-              <button class="menu-item" type="button" role="menuitem" id="wipe">Delete all sessions</button>
+              <button class="menu-item danger" type="button" role="menuitem" id="wipe">Delete all sessions</button>
             </div>
           </div>
         </div>
         <p class="log-total" id="log-total">0 min</p>
-        <p class="empty" id="log-empty">No sessions on this day.</p>
+        <div class="log-empty" id="log-empty">
+          <span class="log-empty-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg></span>
+          <p class="log-empty-title" id="log-empty-title">No sessions yet</p>
+          <p class="log-empty-text" id="log-empty-text">Start the timer to log one.</p>
+        </div>
         <ul class="log-list" id="log-list" hidden></ul>
         <p class="status" id="status" aria-live="polite"></p>
         <div class="wipe">

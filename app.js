@@ -19,12 +19,12 @@
   const el = {
     barDate: $("bar-date"), storageError: $("storage-error"), shell: document.querySelector(".shell"),
     back: $("back"), title: $("title"), rename: $("rename"), renameForm: $("rename-form"), renameInput: $("rename-input"),
-    actTools: $("act-tools"), delAct: $("del-act"), delActConfirm: $("del-act-confirm"), delActQ: $("del-act-q"), delActYes: $("del-act-yes"), delActNo: $("del-act-no"),
+    actTools: $("act-tools"), actMenuBtn: $("act-menu-btn"), actMenu: $("act-menu"), delAct: $("del-act"), delActConfirm: $("del-act-confirm"), delActQ: $("del-act-q"), delActYes: $("del-act-yes"), delActNo: $("del-act-no"),
     home: $("home"), cards: $("cards"), detail: $("detail"),
     label: $("timer-label"), time: $("timer-time"), go: $("go"), goIcon: $("go-icon"), goText: $("go-text"),
     today: $("s-today"), week: $("s-week"), weekBars: $("s-week-bars"), month: $("s-month"), streak: $("s-streak"), streakDots: $("s-streak-dots"),
     calTitle: $("cal-title"), grid: $("grid"), prev: $("prev"), thisMonth: $("this-month"), next: $("next"),
-    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logList: $("log-list"), logMenuBtn: $("log-menu-btn"), logMenu: $("log-menu"), status: $("status"),
+    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logEmptyTitle: $("log-empty-title"), logEmptyText: $("log-empty-text"), logList: $("log-list"), logMenuBtn: $("log-menu-btn"), logMenu: $("log-menu"), status: $("status"),
     wipe: $("wipe"), wipeConfirm: $("wipe-confirm"), wipeQ: $("wipe-q"), wipeYes: $("wipe-yes"), wipeNo: $("wipe-no"), wipeStatus: $("wipe-status"),
     focus: $("focus"), focusLabel: $("focus-label"), focusTime: $("focus-time"), focusToday: $("focus-today"),
     toast: $("toast"), pause: $("pause"), pauseIcon: $("pause-icon"), pauseText: $("pause-text"), finish: $("finish"),
@@ -510,6 +510,8 @@
     ).join("");
     el.logList.hidden = items.length === 0;
     el.logEmpty.hidden = items.length !== 0;
+    el.logEmptyTitle.textContent = isToday ? "No sessions yet" : "No sessions";
+    el.logEmptyText.textContent = isToday ? "Start the timer to log one." : "Nothing was logged on this day.";
   }
 
   function render() {
@@ -529,7 +531,7 @@
       renderCalendar(totals, now);
       renderLog(sl, totals, now);
       el.logMenuBtn.hidden = sl.sessions.length === 0;
-      if (el.logMenuBtn.hidden) closeMenu(false);
+      if (el.logMenuBtn.hidden) closeLogMenu(false);
     }
     renderFocus(now);
     clearInterval(tickTimer);
@@ -572,6 +574,28 @@
     if (ev.key === "Escape" && ev.target.id === "new-name") { addingAct = false; render(); $("new-open").focus(); }
   });
 
+  /* Events: "more" menus (activity header and day log) */
+  function menu(btn, list) {
+    const close = (focusBack) => {
+      if (list.hidden) return;
+      list.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      if (focusBack) btn.focus();
+    };
+    const open = () => {
+      list.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      list.querySelector("[role=menuitem]").focus();
+    };
+    btn.addEventListener("click", () => (list.hidden ? open() : close(true)));
+    list.addEventListener("keydown", (ev) => { if (ev.key === "Escape") close(true); });
+    list.addEventListener("focusout", (ev) => { if (!ev.relatedTarget || !list.parentElement.contains(ev.relatedTarget)) close(false); });
+    document.addEventListener("click", (ev) => { if (!list.parentElement.contains(ev.target)) close(false); });
+    return close;
+  }
+  const closeActMenu = menu(el.actMenuBtn, el.actMenu);
+  const closeLogMenu = menu(el.logMenuBtn, el.logMenu);
+
   /* Events: rename and delete the activity */
   function resetPanels() {
     el.renameForm.hidden = true;
@@ -582,6 +606,7 @@
     clearUndo();
   }
   el.rename.addEventListener("click", () => {
+    closeActMenu(false);
     el.renameInput.value = actName(route.act);
     el.title.hidden = true;
     el.actTools.classList.add("is-renaming");
@@ -594,7 +619,7 @@
     el.title.hidden = false;
     el.actTools.classList.remove("is-renaming");
     render();
-    el.rename.focus();
+    el.actMenuBtn.focus();
   }
   el.renameForm.addEventListener("submit", (ev) => {
     ev.preventDefault();
@@ -608,6 +633,7 @@
   $("rename-cancel").addEventListener("click", closeRename);
 
   el.delAct.addEventListener("click", () => {
+    closeActMenu(false);
     const sl = slice(route.act);
     const n = sl.sessions.length;
     el.delActQ.textContent = `Delete ${actName(route.act)}${n ? ` and its ${plural(n, "session")}` : ""}? This can't be undone.`;
@@ -618,7 +644,7 @@
   function closeDelAct(focusBack) {
     el.delActConfirm.hidden = true;
     el.actTools.classList.remove("is-deleting");
-    if (focusBack) el.delAct.focus();
+    if (focusBack) el.actMenuBtn.focus();
   }
   el.delActNo.addEventListener("click", () => closeDelAct(true));
   el.delActConfirm.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeDelAct(true); });
@@ -630,27 +656,10 @@
     go("#/");
   });
 
-  /* Events: the day log's action menu */
-  function openMenu() {
-    el.logMenu.hidden = false;
-    el.logMenuBtn.setAttribute("aria-expanded", "true");
-    el.logMenu.querySelector("[role=menuitem]").focus();
-  }
-  function closeMenu(focusBack) {
-    if (el.logMenu.hidden) return;
-    el.logMenu.hidden = true;
-    el.logMenuBtn.setAttribute("aria-expanded", "false");
-    if (focusBack) el.logMenuBtn.focus();
-  }
-  el.logMenuBtn.addEventListener("click", () => (el.logMenu.hidden ? openMenu() : closeMenu(true)));
-  el.logMenu.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeMenu(true); });
-  el.logMenu.addEventListener("focusout", (ev) => { if (!ev.relatedTarget || !el.logMenu.parentElement.contains(ev.relatedTarget)) closeMenu(false); });
-  document.addEventListener("click", (ev) => { if (!el.logMenu.parentElement.contains(ev.target)) closeMenu(false); });
-
   /* Events: delete all of this activity's sessions, first press asks */
   function askWipe() {
     const n = slice(route.act).sessions.length;
-    closeMenu(false);
+    closeLogMenu(false);
     if (!n) return;
     el.wipeQ.textContent = `Delete all ${plural(n, "session")} of ${actName(route.act)}? This can't be undone.`;
     el.wipeStatus.textContent = "";
