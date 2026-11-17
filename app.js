@@ -632,6 +632,7 @@
 
   el.delAct.addEventListener("click", () => {
     closeActMenu(false);
+    el.wipeStatus.textContent = "";
     const sl = slice(route.act);
     const n = sl.sessions.length;
     el.delActQ.textContent = `Delete ${actName(route.act)}${n ? ` and its ${plural(n, "session")}` : ""}? This can't be undone.`;
@@ -659,7 +660,7 @@
     const n = slice(route.act).sessions.length;
     closeActMenu(false);
     if (!n) return;
-    el.wipeQ.textContent = `Delete all ${plural(n, "session")} of ${actName(route.act)}? This can't be undone.`;
+    el.wipeQ.textContent = `Clear all ${plural(n, "session")} of ${actName(route.act)}? This can't be undone.`;
     el.wipeStatus.textContent = "";
     el.actTools.classList.add("is-wiping");
     el.wipeConfirm.hidden = false;
@@ -680,7 +681,7 @@
     write(KEY_SESSIONS, kept);
     clearUndo();
     closeWipe(false);
-    el.wipeStatus.textContent = `Deleted ${plural(n, "session")}.`;
+    el.wipeStatus.textContent = `Cleared ${plural(n, "session")}.`;
     render();
     el.wipeStatus.setAttribute("tabindex", "-1");
     el.wipeStatus.focus();

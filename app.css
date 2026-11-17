@@ -203,9 +203,8 @@ main { display: grid; gap: var(--gap); padding-bottom: 64px; }
 }
 @media (max-width: 40rem) {
   .bar { flex-wrap: wrap; align-items: flex-start; padding-block: 24px 16px; }
-  .act-tools, .del-act-confirm { justify-items: start; text-align: start; }
-  .tool-links .icon-btn { margin-right: 0; margin-left: -8px; }
-  .tool-links .menu-list { right: auto; left: -8px; }
+  .act-tools { margin-left: auto; }
+  .del-act-confirm { justify-items: start; text-align: start; }
   .cards { grid-template-columns: minmax(0, 1fr); }
   .act-card { min-height: 0; }
   .timer { min-height: 0; padding-block: 40px; gap: 24px; }

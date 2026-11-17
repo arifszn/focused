@@ -19,6 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: mkdir -p dist && cp index.html app.js app.css base.css tokens.css favicon.svg apple-touch-icon.png logo.svg dist/
+      - name: Version asset URLs so a new page never loads cached old scripts
+        run: |
+          v=${GITHUB_SHA::7}
+          sed -i "s|\./app\.css\"|./app.css?v=$v\"|; s|\./app\.js\"|./app.js?v=$v\"|" dist/index.html
+          sed -i "s|\./tokens\.css\"|./tokens.css?v=$v\"|; s|\./base\.css\"|./base.css?v=$v\"|" dist/app.css
+          grep -q "app.js?v=$v" dist/index.html && grep -q "base.css?v=$v" dist/app.css
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
