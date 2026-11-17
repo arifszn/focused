@@ -24,7 +24,7 @@
     label: $("timer-label"), time: $("timer-time"), go: $("go"), goIcon: $("go-icon"), goText: $("go-text"),
     today: $("s-today"), week: $("s-week"), weekBars: $("s-week-bars"), month: $("s-month"), streak: $("s-streak"), streakDots: $("s-streak-dots"),
     calTitle: $("cal-title"), grid: $("grid"), prev: $("prev"), thisMonth: $("this-month"), next: $("next"),
-    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logEmptyTitle: $("log-empty-title"), logEmptyText: $("log-empty-text"), logList: $("log-list"), logMenuBtn: $("log-menu-btn"), logMenu: $("log-menu"), status: $("status"),
+    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logEmptyTitle: $("log-empty-title"), logEmptyText: $("log-empty-text"), logList: $("log-list"), status: $("status"),
     wipe: $("wipe"), wipeConfirm: $("wipe-confirm"), wipeQ: $("wipe-q"), wipeYes: $("wipe-yes"), wipeNo: $("wipe-no"), wipeStatus: $("wipe-status"),
     focus: $("focus"), focusLabel: $("focus-label"), focusTime: $("focus-time"), focusToday: $("focus-today"),
     toast: $("toast"), pause: $("pause"), pauseIcon: $("pause-icon"), pauseText: $("pause-text"), finish: $("finish"),
@@ -530,8 +530,7 @@
       renderStats(totals, now);
       renderCalendar(totals, now);
       renderLog(sl, totals, now);
-      el.logMenuBtn.hidden = sl.sessions.length === 0;
-      if (el.logMenuBtn.hidden) closeLogMenu(false);
+      el.wipe.hidden = sl.sessions.length === 0;
     }
     renderFocus(now);
     clearInterval(tickTimer);
@@ -574,7 +573,7 @@
     if (ev.key === "Escape" && ev.target.id === "new-name") { addingAct = false; render(); $("new-open").focus(); }
   });
 
-  /* Events: "more" menus (activity header and day log) */
+  /* Events: the activity's ⋯ menu */
   function menu(btn, list) {
     const close = (focusBack) => {
       if (list.hidden) return;
@@ -594,7 +593,6 @@
     return close;
   }
   const closeActMenu = menu(el.actMenuBtn, el.actMenu);
-  const closeLogMenu = menu(el.logMenuBtn, el.logMenu);
 
   /* Events: rename and delete the activity */
   function resetPanels() {
@@ -659,16 +657,18 @@
   /* Events: delete all of this activity's sessions, first press asks */
   function askWipe() {
     const n = slice(route.act).sessions.length;
-    closeLogMenu(false);
+    closeActMenu(false);
     if (!n) return;
     el.wipeQ.textContent = `Delete all ${plural(n, "session")} of ${actName(route.act)}? This can't be undone.`;
     el.wipeStatus.textContent = "";
+    el.actTools.classList.add("is-wiping");
     el.wipeConfirm.hidden = false;
     el.wipeNo.focus();
   }
   function closeWipe(focusBack) {
     el.wipeConfirm.hidden = true;
-    if (focusBack) el.logMenuBtn.focus();
+    el.actTools.classList.remove("is-wiping");
+    if (focusBack) el.actMenuBtn.focus();
   }
   el.wipe.addEventListener("click", askWipe);
   el.wipeNo.addEventListener("click", () => closeWipe(true));
