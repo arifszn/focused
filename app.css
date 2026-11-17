@@ -81,6 +81,29 @@ main { display: grid; gap: var(--gap); padding-bottom: 64px; }
 .stat dt { color: var(--muted); }
 .stat dd { margin: 0; font-size: var(--fs-kpi); font-weight: 400; line-height: 36px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
+/* This week: a bar per day beside the total, minutes above each bar */
+.stat-week { grid-template-columns: minmax(0, 1fr) 148px; column-gap: 16px; }
+.stat-week dt { grid-area: 1 / 1; }
+.stat-week #s-week { grid-area: 2 / 1; }
+.stat .week-bars { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; height: 56px; font-size: 10px; line-height: 12px; letter-spacing: 0; }
+.wd { display: grid; grid-template-rows: auto 1fr auto; gap: 3px; min-width: 0; text-align: center; }
+.wd i { align-self: end; min-height: 3px; border-radius: 3px; background: var(--heat-2); }
+.wd.is-zero i { height: 3px; background: var(--heat-0); }
+.wd.is-future i { height: 3px; background: transparent; outline: 1px dashed var(--control); outline-offset: -1px; }
+.wd.is-today i { background: var(--accent); }
+.wd.is-today.is-zero i { background: var(--control); }
+.wd-n { color: var(--text); white-space: nowrap; }
+.wd-l { color: var(--muted); }
+.wd.is-today .wd-l { color: var(--text); font-weight: 600; }
+
+/* Days in a row: the count beside the label, the last 14 days below */
+.stat-streak { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; }
+.stat-streak #s-streak { font-size: 20px; line-height: 28px; letter-spacing: -0.01em; }
+.stat .streak-dots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
+.streak-dots i { aspect-ratio: 1; max-height: 16px; border-radius: 2px; background: var(--heat-0); }
+.streak-dots i.h1 { background: var(--heat-1); } .streak-dots i.h2 { background: var(--heat-2); } .streak-dots i.h3 { background: var(--heat-3); } .streak-dots i.h4 { background: var(--heat-4); }
+.streak-dots i.is-today { outline: 1.5px solid var(--text); outline-offset: 1px; }
+
 /* Calendar */
 .cal { grid-column: span 8; display: grid; gap: 16px; align-content: start; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
@@ -123,12 +146,28 @@ main { display: grid; gap: var(--gap); padding-bottom: 64px; }
 .log { grid-column: span 4; display: grid; gap: 12px; align-content: start; align-self: start; }
 .log-total { font-size: var(--fs-kpi); line-height: 36px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .empty { color: var(--muted); }
-table { width: 100%; margin-top: 4px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th { padding: 0 0 8px; color: var(--muted); font-size: var(--fs-small); font-weight: 400; text-align: start; white-space: nowrap; }
-td { height: var(--row-height); border-top: 1px solid var(--rule); vertical-align: middle; }
-td + td, th + th { padding-inline-start: 12px; }
-td.len, th.len { text-align: end; }
-td:last-child, th:last-child { text-align: end; }
+.log-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.log-list { display: grid; margin: 4px 0 0; padding: 0; list-style: none; font-variant-numeric: tabular-nums; }
+.log-row { display: grid; gap: 6px; padding: 8px 0 12px; border-top: 1px solid var(--rule); }
+.log-row-top { display: grid; grid-template-columns: 1fr auto 32px; align-items: center; gap: 12px; min-height: 32px; }
+.log-row-top .len { text-align: end; }
+.log-bar { height: 6px; border-radius: 3px; background: var(--heat-3); }
+
+/* Quiet icon action: grey, red on hover for deletes */
+.icon-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--radius-control); background: none; color: var(--muted); cursor: pointer; transition: color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out); }
+.icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.log-head .icon-btn { margin-right: -8px; }
+@media (hover: hover) {
+  .icon-btn:hover { background: var(--cell); color: var(--text); }
+  .row-del.icon-btn:hover { color: var(--negative); }
+}
+
+/* Popup menu */
+.menu { position: relative; }
+.menu-list { position: absolute; top: calc(100% + 4px); right: -8px; z-index: 10; display: grid; min-width: 180px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-control); }
+.menu-item { min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-cell); background: none; color: var(--text); font-size: 13px; text-align: start; white-space: nowrap; cursor: pointer; }
+.menu-item:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .menu-item:hover { background: var(--cell); color: var(--negative); } }
 
 .link-btn { min-height: 32px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 13px; cursor: pointer; transition: color var(--dur-short) var(--ease-out); }
 .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -141,9 +180,9 @@ td:last-child, th:last-child { text-align: end; }
 .confirm-actions { display: flex; gap: 8px; }
 .ctl.danger { border-color: var(--negative); background: var(--negative); color: #ffffff; }
 @media (hover: hover) { .ctl.danger:not(:disabled):hover { background: #a81e23; } }
-.wipe-btn:disabled { display: none; }
 .wipe-status { color: var(--muted); }
 .wipe-status:empty { display: none; }
+.wipe:has(> .wipe-confirm[hidden]):has(> .wipe-status:empty) { display: none; }
 .status:empty { margin-top: -12px; }
 .status .link-btn { margin-inline-start: 8px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 @media (hover: hover) { .status .link-btn:hover { color: var(--accent); } }
@@ -166,6 +205,11 @@ td:last-child, th:last-child { text-align: end; }
   .timer { min-height: 0; padding-block: 40px; gap: 24px; }
   .go { width: 100%; }
   .stat dd { font-size: 24px; line-height: 32px; }
+  /* Week and streak need the full width; today and month share a row */
+  .stat.stat-week { grid-column: 1 / -1; order: -1; border-top: 0; border-left: 0; }
+  .stat.stat-today { border-top: 1px solid var(--rule); border-left: 0; }
+  .stat.stat-month { border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+  .stat.stat-streak { grid-column: 1 / -1; border-top: 1px solid var(--rule); border-left: 0; }
   .grid { gap: 4px; }
   .day { min-height: 44px; padding: 6px; justify-items: center; align-content: center; }
   .day-min { display: none; }

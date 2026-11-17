@@ -8,6 +8,8 @@ The locked system. Change it on purpose; the file is the rule.
 - Canvas: centred 1100px column, 16px gap.
 - Home (`#/`): one card per activity, 3 across (2 on tablet, 1 on phone): name, today's time, week and streak, a 28-day strip in the heat ramp; a dashed New activity card last.
 - Activity (`#/<id>`, `#/<id>/<yyyy-mm-dd>`): 12 columns. Row 1: timer 8 + figures 4. Row 2: calendar 8 + day log 4. Rename and Delete sit in the header.
+- Figures card: Today, This week (with Mon-Sun bars beside it, minutes above each bar, future days dashed), This month, Days in a row (count beside the label, the last 14 days below in the heat ramp, today outlined).
+- Day log: each session row shows its range, length, a trash icon and a bar for its share of the day; "Delete all sessions" sits in the card's ⋯ menu.
 - Type: Geist only. Timer at weight 200, `clamp(72px, 10vw, 136px)`; figures 30px/400; titles 16-20px/600; body 14px; meta 12px.
 
 ## Logo
@@ -21,7 +23,8 @@ Colour roles: chrome is ink and greys only. The one hue, `--accent: #1d5fbf`, go
 ## Controls
 - Primary: near-black pill, 48px tall (full width under 40rem)
 - Secondary: 32px bordered control, 8px radius; month arrows are icon-only with `aria-label`
-- Row action: grey text, turns red on hover
+- Row action: grey text, turns red on hover; a session row's delete is a 32px trash icon
+- Menu: 32px ⋯ icon button opening a bordered list (Escape, outside click or Tab closes it); the day log's "Delete all sessions" lives there
 
 ## Focus mode
 While a session runs, a full-screen view on the app's ground (`#f2f4f7`) takes over: a label ("Since 18:05" or "Paused", no activity name), the timer at weight 200 `clamp(88px, 19vw, 260px)` in ink, quiet outlined Pause/Resume and a text Finish, today's total at the foot. Paused: the time turns grey. Each running segment is saved as its own session.

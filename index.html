@@ -64,10 +64,10 @@
         </button>
       </div>
       <dl class="card stats">
-        <div class="stat"><dt>Today</dt><dd id="s-today">0 min</dd></div>
-        <div class="stat"><dt>This week</dt><dd id="s-week">0 min</dd></div>
-        <div class="stat"><dt>This month</dt><dd id="s-month">0 min</dd></div>
-        <div class="stat"><dt>Days in a row</dt><dd id="s-streak">0</dd></div>
+        <div class="stat stat-today"><dt>Today</dt><dd id="s-today">0 min</dd></div>
+        <div class="stat stat-week"><dt>This week</dt><dd id="s-week">0 min</dd><dd class="week-bars" id="s-week-bars" role="img"></dd></div>
+        <div class="stat stat-month"><dt>This month</dt><dd id="s-month">0 min</dd></div>
+        <div class="stat stat-streak"><dt>Days in a row</dt><dd id="s-streak">0</dd><dd class="streak-dots" id="s-streak-dots" role="img"></dd></div>
       </dl>
     </section>
 
@@ -94,16 +94,20 @@
       </section>
 
       <section class="card log" aria-labelledby="log-title">
-        <h2 id="log-title">Today</h2>
+        <div class="log-head">
+          <h2 id="log-title">Today</h2>
+          <div class="menu">
+            <button class="icon-btn" type="button" id="log-menu-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded="false" aria-controls="log-menu"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="12.5" cy="8" r=".75"/></svg></button>
+            <div class="menu-list" id="log-menu" role="menu" aria-labelledby="log-menu-btn" hidden>
+              <button class="menu-item" type="button" role="menuitem" id="wipe">Delete all sessions</button>
+            </div>
+          </div>
+        </div>
         <p class="log-total" id="log-total">0 min</p>
         <p class="empty" id="log-empty">No sessions on this day.</p>
-        <table id="log-table" hidden>
-          <thead><tr><th scope="col">Start</th><th scope="col">End</th><th scope="col" class="len">Length</th><th scope="col"><span class="visually-hidden">Action</span></th></tr></thead>
-          <tbody id="log-body"></tbody>
-        </table>
+        <ul class="log-list" id="log-list" hidden></ul>
         <p class="status" id="status" aria-live="polite"></p>
         <div class="wipe">
-          <button class="link-btn wipe-btn" type="button" id="wipe">Delete all sessions</button>
           <div class="wipe-confirm" id="wipe-confirm" role="group" aria-labelledby="wipe-q" hidden>
             <p id="wipe-q">Delete all sessions? This can't be undone.</p>
             <div class="confirm-actions">

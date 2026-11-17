@@ -22,9 +22,9 @@
     actTools: $("act-tools"), delAct: $("del-act"), delActConfirm: $("del-act-confirm"), delActQ: $("del-act-q"), delActYes: $("del-act-yes"), delActNo: $("del-act-no"),
     home: $("home"), cards: $("cards"), detail: $("detail"),
     label: $("timer-label"), time: $("timer-time"), go: $("go"), goIcon: $("go-icon"), goText: $("go-text"),
-    today: $("s-today"), week: $("s-week"), month: $("s-month"), streak: $("s-streak"),
+    today: $("s-today"), week: $("s-week"), weekBars: $("s-week-bars"), month: $("s-month"), streak: $("s-streak"), streakDots: $("s-streak-dots"),
     calTitle: $("cal-title"), grid: $("grid"), prev: $("prev"), thisMonth: $("this-month"), next: $("next"),
-    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logTable: $("log-table"), logBody: $("log-body"), status: $("status"),
+    logTitle: $("log-title"), logTotal: $("log-total"), logEmpty: $("log-empty"), logList: $("log-list"), logMenuBtn: $("log-menu-btn"), logMenu: $("log-menu"), status: $("status"),
     wipe: $("wipe"), wipeConfirm: $("wipe-confirm"), wipeQ: $("wipe-q"), wipeYes: $("wipe-yes"), wipeNo: $("wipe-no"), wipeStatus: $("wipe-status"),
     focus: $("focus"), focusLabel: $("focus-label"), focusTime: $("focus-time"), focusToday: $("focus-today"),
     toast: $("toast"), pause: $("pause"), pauseIcon: $("pause-icon"), pauseText: $("pause-text"), finish: $("finish"),
@@ -424,7 +424,28 @@
     el.week.textContent = fmtDur(sm.week);
     el.month.textContent = fmtDur(sm.month);
     el.streak.textContent = String(sm.streak);
+
+    // This week, Monday to Sunday: a bar per day with its minutes above it.
+    const t0 = startOfDay(new Date(now)), mon = mondayOf(t0);
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(mon, i);
+      return { d, ms: totals.get(dayKey(d)) || 0, today: +d === +t0, future: d > t0 };
+    });
+    const max = Math.max(60000, ...days.map((x) => x.ms));
+    const short = (ms) => { const m = Math.floor(ms / 60000); return m < 1 ? "" : m < 60 ? String(m) : `${Math.round(m / 6) / 10}h`; };
+    el.weekBars.innerHTML = days.map((x) => {
+      const cls = ["wd", x.today ? "is-today" : "", x.future ? "is-future" : "", x.ms < 60000 ? "is-zero" : ""].join(" ").trim();
+      const h = x.future || x.ms < 60000 ? "" : ` style="height:${Math.max(8, (x.ms / max) * 100).toFixed(0)}%"`;
+      return `<span class="${cls}"><span class="wd-n">${x.future ? "" : short(x.ms)}</span><i${h}></i><span class="wd-l">${WEEK_LETTERS[(x.d.getDay() + 6) % 7]}</span></span>`;
+    }).join("");
+    el.weekBars.setAttribute("aria-label", days.filter((x) => !x.future).map((x) => `${x.d.toLocaleDateString([], { weekday: "long" })} ${fmtDur(x.ms)}`).join(", "));
+
+    // Days in a row: the last 14 days in the heat ramp, today outlined.
+    const dots = Array.from({ length: 14 }, (_, i) => { const d = addDays(t0, i - 13); return { d, ms: totals.get(dayKey(d)) || 0 }; });
+    el.streakDots.innerHTML = dots.map((x, i) => `<i class="${[heat(x.ms), i === 13 ? "is-today" : ""].join(" ").trim()}"></i>`).join("");
+    el.streakDots.setAttribute("aria-label", `Last 14 days: ${dots.filter((x) => x.ms >= 60000).length} with focus`);
   }
+  const WEEK_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 
   let gridKey = "";
   function renderCalendar(totals, now) {
@@ -477,14 +498,18 @@
     if (sig === logKey && !live) return;
     logKey = sig;
 
-    const html = rows.map((s) =>
-      `<tr><td>${fmtClock(s.start)}</td><td>${fmtClock(s.end)}</td><td class="len">${fmtDur(durOf(s))}</td>` +
-      `<td><button type="button" class="link-btn" data-del="${s.id}" aria-label="Delete session from ${fmtClock(s.start)} to ${fmtClock(s.end)}">Delete</button></td></tr>`
-    );
-    if (live) html.push(`<tr><td>${fmtClock(sl.active.since || sl.active.start)}</td><td>${sl.active.start ? "Running" : "Paused"}</td><td class="len">${fmtDur(elapsedOf(sl.active, now))}</td><td></td></tr>`);
-    el.logBody.innerHTML = html.join("");
-    el.logTable.hidden = html.length === 0;
-    el.logEmpty.hidden = html.length !== 0;
+    // Each row: time range, length, and a bar for its share of the listed time.
+    const items = rows.map((s) => ({ from: fmtClock(s.start), to: fmtClock(s.end), ms: durOf(s), id: s.id }));
+    if (live) items.push({ from: fmtClock(sl.active.since || sl.active.start), to: sl.active.start ? "Running" : "Paused", ms: elapsedOf(sl.active, now) });
+    const sum = items.reduce((t, x) => t + x.ms, 0) || 1;
+    const trash = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>`;
+    el.logList.innerHTML = items.map((x) =>
+      `<li class="log-row"><div class="log-row-top"><span>${x.from} – ${x.to}</span><span class="len">${fmtDur(x.ms)}</span>` +
+      (x.id ? `<button type="button" class="icon-btn row-del" data-del="${x.id}" aria-label="Delete session from ${x.from} to ${x.to}">${trash}</button>` : `<span class="row-del" aria-hidden="true"></span>`) +
+      `</div><div class="log-bar" style="width:${Math.max(2, (x.ms / sum) * 100).toFixed(1)}%"></div></li>`
+    ).join("");
+    el.logList.hidden = items.length === 0;
+    el.logEmpty.hidden = items.length !== 0;
   }
 
   function render() {
@@ -503,7 +528,8 @@
       renderStats(totals, now);
       renderCalendar(totals, now);
       renderLog(sl, totals, now);
-      el.wipe.disabled = sl.sessions.length === 0;
+      el.logMenuBtn.hidden = sl.sessions.length === 0;
+      if (el.logMenuBtn.hidden) closeMenu(false);
     }
     renderFocus(now);
     clearInterval(tickTimer);
@@ -604,20 +630,36 @@
     go("#/");
   });
 
+  /* Events: the day log's action menu */
+  function openMenu() {
+    el.logMenu.hidden = false;
+    el.logMenuBtn.setAttribute("aria-expanded", "true");
+    el.logMenu.querySelector("[role=menuitem]").focus();
+  }
+  function closeMenu(focusBack) {
+    if (el.logMenu.hidden) return;
+    el.logMenu.hidden = true;
+    el.logMenuBtn.setAttribute("aria-expanded", "false");
+    if (focusBack) el.logMenuBtn.focus();
+  }
+  el.logMenuBtn.addEventListener("click", () => (el.logMenu.hidden ? openMenu() : closeMenu(true)));
+  el.logMenu.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeMenu(true); });
+  el.logMenu.addEventListener("focusout", (ev) => { if (!ev.relatedTarget || !el.logMenu.parentElement.contains(ev.relatedTarget)) closeMenu(false); });
+  document.addEventListener("click", (ev) => { if (!el.logMenu.parentElement.contains(ev.target)) closeMenu(false); });
+
   /* Events: delete all of this activity's sessions, first press asks */
   function askWipe() {
     const n = slice(route.act).sessions.length;
+    closeMenu(false);
     if (!n) return;
     el.wipeQ.textContent = `Delete all ${plural(n, "session")} of ${actName(route.act)}? This can't be undone.`;
     el.wipeStatus.textContent = "";
-    el.wipe.hidden = true;
     el.wipeConfirm.hidden = false;
     el.wipeNo.focus();
   }
   function closeWipe(focusBack) {
     el.wipeConfirm.hidden = true;
-    el.wipe.hidden = false;
-    if (focusBack) el.wipe.focus();
+    if (focusBack) el.logMenuBtn.focus();
   }
   el.wipe.addEventListener("click", askWipe);
   el.wipeNo.addEventListener("click", () => closeWipe(true));
@@ -645,7 +687,7 @@
   el.thisMonth.addEventListener("click", () => setSelected(dayKey(new Date())));
   window.addEventListener("hashchange", () => { readHash(); render(); window.scrollTo(0, 0); });
 
-  el.logBody.addEventListener("click", (ev) => {
+  el.logList.addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-del]");
     if (!b) return;
     const sessions = getSessions();
